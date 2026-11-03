@@ -5,14 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:lan": "vite --mode lan",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
+    "serve:lan": "tsc --noEmit && vite build && vite preview --mode lan",
     "test": "vitest run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0"
   },
   "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.1.0"

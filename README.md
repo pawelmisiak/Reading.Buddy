@@ -35,6 +35,32 @@ npm run dev
 Open the printed URL (http://localhost:5173) in **Chrome, Edge or Safari**. Firefox doesn't support speech
 recognition yet. The microphone only works on `localhost` or over HTTPS.
 
+### On your home network (tablets, phones, other computers)
+
+```bash
+npm run dev:lan
+```
+
+This serves the app over HTTPS and prints a **Network** address such as `https://192.168.1.23:5173`. Open
+that address on any device on the same Wi-Fi. HTTPS is needed because browsers only allow the microphone
+on `https://` addresses (or `localhost`).
+
+The certificate is self-signed, so each device shows a one-time "connection is not private" warning the
+first time. Tap **Advanced** → **Proceed** (Chrome/Edge) or **Show Details** → **visit this website**
+(Safari). It's safe here because you're connecting to your own computer.
+
+To keep it running without the dev tooling, build once and serve the result:
+
+```bash
+npm run serve:lan
+```
+
+That uses port 4173 instead of 5173. Notes:
+- The computer running it has to stay on, and devices need internet access for speech recognition.
+- If a device can't connect, allow Node through the computer's firewall for private networks.
+- Each device keeps its own API key, practice words and reading log (they're stored in the browser).
+- If the cached certificate is removed, a new one is generated and devices show the warning again.
+
 Other commands:
 
 ```bash
