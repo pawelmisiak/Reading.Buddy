@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reading Buddy</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>" />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>📖 Reading Buddy</h1>
+      <div class="topbar-controls">
+        <label>
+          Reader level
+          <select id="level"></select>
+        </label>
+        <button id="openSettings" class="ghost" title="Settings">⚙️</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="card setup" id="setup">
+        <div class="tabs" role="tablist">
+          <button role="tab" class="tab active" data-tab="paste">✏️ Paste text</button>
+          <button role="tab" class="tab" data-tab="story">✨ Make a story</button>
+          <button role="tab" class="tab" data-tab="words">⭐ Practice words</button>
+        </div>
+
+        <div class="tabpanel" data-panel="paste">
+          <p class="hint">Paste a story, a news article, or homework text.</p>
+          <textarea id="pasteText" rows="6" placeholder="Once upon a time…"></textarea>
+          <div class="row">
+            <button id="usePasted" class="primary">Read this</button>
+            <button id="simplifyPasted" class="secondary" title="Needs a Claude API key (Settings)">🪄 Make it easier for my level</button>
+          </div>
+        </div>
+
+        <div class="tabpanel hidden" data-panel="story">
+          <p class="hint">A new short story at the chosen level, using your practice words.</p>
+          <div class="grid2">
+            <label>Topic (optional)<input id="topic" placeholder="dinosaurs, space, a birthday…" /></label>
+            <label>Main character (optional)<input id="childName" placeholder="a name" /></label>
+          </div>
+          <p class="hint" id="storyWordsHint"></p>
+          <div class="row">
+            <button id="makeStory" class="primary">✨ Make my story</button>
+            <button id="drill" class="secondary">Just the practice words</button>
+          </div>
+          <p class="hint small" id="storyModeHint"></p>
+        </div>
+
+        <div class="tabpanel hidden" data-panel="words">
+          <p class="hint">Words from school to practise. Type them, separated by spaces or commas.</p>
+          <div class="row">
+            <input id="wordInput" placeholder="because, friend, said" />
+            <button id="addWords" class="primary">Add</button>
+          </div>
+          <div class="chips" id="wordChips"></div>
+          <div class="row">
+            <select id="wordListSelect"></select>
+            <button id="loadList" class="secondary">Add 8 words from this list</button>
+            <button id="clearWords" class="ghost">Clear all</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card reader hidden" id="reader">
+        <div class="reader-head">
+          <h2 id="storyTitle"></h2>
+          <div class="legend">
+            <span class="dot correct"></span>right
+            <span class="dot retried"></span>got it on a retry
+            <span class="dot missed"></span>needs practice
+          </div>
+        </div>
+        <div id="storyText" class="story-text" aria-live="polite"></div>
+        <p class="heard" id="heard"></p>
+        <div class="controls">
+          <button id="micBtn" class="mic">🎤 Start reading</button>
+          <button id="readToMe" class="secondary">🔊 Read to me</button>
+          <button id="skipBtn" class="ghost" title="Mark this word and move on">Skip word ⏭</button>
+          <button id="restartBtn" class="ghost">↺ Start over</button>
+          <button id="newText" class="ghost">New text</button>
+        </div>
+        <p class="hint small">Tip: tap any word to hear it.</p>
+      </section>
+
+      <section class="card results hidden" id="results">
+        <h2 id="resultsTitle">Great reading! 🎉</h2>
+        <div class="stats" id="stats"></div>
+        <div id="trickyBox"></div>
+      </section>
+
+      <section class="card history" id="historyCard">
+        <h2>Reading log</h2>
+        <div id="history"></div>
+      </section>
+    </main>
+
+    <dialog id="settings">
+      <form method="dialog">
+        <h2>Settings (for grown-ups)</h2>
+        <label>
+          Claude API key
+          <input id="apiKey" type="password" autocomplete="off" placeholder="sk-ant-…" />
+        </label>
+        <p class="hint small">
+          Used only to write new stories and simplify pasted text. It is stored in this browser only. Without a
+          key, Reading Buddy uses its built-in stories.
+        </p>
+        <label>
+          Listening language
+          <select id="lang">
+            <option value="en-US">English (US)</option>
+            <option value="en-GB">English (UK)</option>
+            <option value="en-AU">English (Australia)</option>
+          </select>
+        </label>
+        <label class="check"><input id="dyslexiaFont" type="checkbox" /> Easier-to-read font and spacing</label>
+        <p class="hint small">
+          Privacy: in most browsers (e.g. Chrome), speech recognition audio is processed by the browser maker's servers.
+        </p>
+        <div class="row end"><button class="primary" value="close">Done</button></div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast hidden" role="status"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
