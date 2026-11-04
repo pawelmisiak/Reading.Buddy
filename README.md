@@ -19,8 +19,8 @@ misread, so the child sees their progress live.
   every practice word, about whatever topic the child likes. Without a key it uses a built-in story library.
 - **Make it easier**: rewrites a pasted text (e.g. a news article) at the child's reading level.
 - **My stories**: press 💾 Save story while reading to keep a story (generated, simplified or pasted). Saved
-  stories appear in the 📚 My stories tab, where they can be read again or deleted. They're stored in the
-  browser on that device.
+  stories appear in the 📚 My stories tab, where they can be read again or deleted. They're kept in app
+  storage on the computer running Reading Buddy, so every device on the home network sees the same stories.
 - **Read to me**: reads the text aloud, highlighting each word. Tap any word to hear just that word.
 - **Results and reading log**: accuracy, words per minute, stars, and a "words to practise" list that can be
   added to the practice words with one tap. Finished readings are kept in a log.
@@ -63,7 +63,8 @@ npm run serve:lan
 That uses port 4173 instead of 5173. Notes:
 - The computer running it has to stay on, and devices need internet access for speech recognition.
 - If a device can't connect, allow Node through the computer's firewall for private networks.
-- Each device keeps its own API key, practice words and reading log (they're stored in the browser).
+- Saved stories are shared by all devices (see App storage below). The API key, practice words and
+  reading log are still kept separately in each device's browser.
 - If the cached certificate is removed, a new one is generated and devices show the warning again.
 
 Other commands:
@@ -98,10 +99,24 @@ small backend** so that no key lives in the browser.
 5. Interim (still-changing) recognizer results only move the cursor forward. Only settled results count
    as mistakes.
 
+## App storage
+
+Saved stories are written to `data/stories.json` in the project folder on the computer running the app.
+The app's own server (`npm run dev`, `npm run dev:lan` or `npm run serve:lan`) reads and writes that file,
+so any device on the network sees the same list.
+
+- **Back up** your stories by copying `data/stories.json`. It's ignored by git, so it never ends up on GitHub.
+- **Store them somewhere else** by setting `READING_BUDDY_DATA`, e.g.
+  `READING_BUDDY_DATA=~/Documents/ReadingBuddy npm run serve:lan`.
+- Stories saved in a browser by an earlier version of the app move to app storage automatically the next
+  time that browser opens the app.
+- The files in `dist/` alone (`npm run build`) have no story storage, because there's no app server.
+
 ## Privacy note
 
-In Chrome and Edge, speech recognition audio goes to the browser maker's servers for processing. Reading
-history, practice words and saved stories stay in the browser's local storage.
+In Chrome and Edge, speech recognition audio goes to the browser maker's servers for processing. Saved
+stories stay on your computer (`data/stories.json`). Reading history and practice words stay in each
+browser's local storage.
 
 ## Project layout
 
@@ -112,7 +127,9 @@ src/matcher.ts    word matching engine
 src/speech.ts     speech recognition and text-to-speech wrappers
 src/story.ts      Claude story generation and the built-in story library
 src/levels.ts     age levels and Dolch word lists
-src/library.ts    saved stories (My stories)
+src/library.ts    saved stories list logic (My stories)
+src/storiesClient.ts  browser side of app storage
+server/storiesApi.ts  app storage: /api/stories, saved to data/stories.json
 src/storage.ts    localStorage helpers
 tests/            unit tests (Vitest)
 ```

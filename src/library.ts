@@ -2,7 +2,7 @@
  * "My stories": texts the family chose to keep. Pure list operations; main.ts
  * persists the list with storage.ts.
  */
-import type { Story } from './story';
+import type { Story } from './story.ts';
 
 export interface SavedStory {
   id: string;

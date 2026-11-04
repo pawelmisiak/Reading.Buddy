@@ -13,7 +13,8 @@ import {
 import { Listener, recognitionSupported, speak, stopSpeaking, ttsSupported } from './speech';
 import { generateStory, libraryStory, practiceWordsDrill, simplifyText, wordsInText, type Story } from './story';
 import { load, save, type SessionRecord } from './storage';
-import { addStory, findSaved, removeStory, toStory, type SavedStory } from './library';
+import { findSaved, removeStory, toStory, type SavedStory } from './library';
+import { deleteStory, fetchStories, saveStory } from './storiesClient';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -23,7 +24,8 @@ let practiceWords: string[] = load('practiceWords', []);
 let apiKey: string = load('apiKey', '');
 let lang: string = load('lang', 'en-US');
 let history: SessionRecord[] = load('history', []);
-let library: SavedStory[] = load('library', []);
+/** Saved stories, kept in app storage on the computer running the app. */
+let library: SavedStory[] = [];
 
 // ---------- reading session ----------
 let current: { story: Story; tokens: TokenizedText } | null = null;
@@ -298,18 +300,52 @@ function updateSaveButton(): void {
   btn.disabled = isSaved;
 }
 
-function saveCurrentStory(): void {
+async function saveCurrentStory(): Promise<void> {
   if (!current) return;
-  const { list, added } = addStory(library, current.story, level.id);
-  if (!added) return updateSaveButton();
-  if (!save('library', list)) {
-    toast("Couldn't save: this browser's storage is full or turned off. Try deleting some saved stories.");
+  const btn = $<HTMLButtonElement>('saveStory');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  try {
+    const { entry, added } = await saveStory(current.story, level.id);
+    if (!findSaved(library, entry.text)) library = [entry, ...library];
+    renderLibrary();
+    toast(added ? 'Saved to 📚 My stories.' : 'This story was already saved.');
+  } catch (err) {
+    toast(err instanceof Error ? err.message : String(err));
+  }
+  updateSaveButton();
+}
+
+/** Reload saved stories from app storage (picks up stories saved on other devices). */
+async function refreshLibrary(): Promise<void> {
+  try {
+    library = await fetchStories();
+  } catch (err) {
+    $('library').innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'hint';
+    p.textContent = err instanceof Error ? err.message : String(err);
+    $('library').append(p);
     return;
   }
-  library = list;
-  updateSaveButton();
   renderLibrary();
-  toast('Saved to 📚 My stories.');
+  if (current) updateSaveButton();
+}
+
+/**
+ * Earlier versions saved stories in this browser. Move them to app storage
+ * once, so they show up on every device.
+ */
+async function migrateBrowserStories(): Promise<void> {
+  const old = load<SavedStory[]>('library', []);
+  if (!old.length) return;
+  try {
+    for (const s of [...old].reverse()) await saveStory(toStory(s), s.levelId);
+  } catch {
+    return; // try again next time the app opens
+  }
+  save('library', []);
+  toast(`Moved ${old.length} saved ${old.length === 1 ? 'story' : 'stories'} to app storage.`);
 }
 
 function renderLibrary(): void {
@@ -346,10 +382,18 @@ function renderLibrary(): void {
     del.className = 'ghost';
     del.textContent = '🗑';
     del.title = `Delete “${s.title}”`;
-    del.onclick = () => {
+    del.onclick = async () => {
       if (!confirm(`Delete “${s.title}” from My stories?`)) return;
+      try {
+        await deleteStory(s.id);
+      } catch (err) {
+        // Already deleted on another device: just drop it from the list.
+        if (!(err instanceof Error && /not found/i.test(err.message))) {
+          toast(err instanceof Error ? err.message : String(err));
+          return;
+        }
+      }
       library = removeStory(library, s.id);
-      save('library', library);
       renderLibrary();
       if (current) updateSaveButton();
     };
@@ -419,6 +463,7 @@ function init(): void {
 
   document.querySelectorAll<HTMLButtonElement>('.tab').forEach((tab) => {
     tab.onclick = () => {
+      if (tab.dataset.tab === 'library') void refreshLibrary();
       document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
       document
         .querySelectorAll<HTMLElement>('.tabpanel')
@@ -546,6 +591,7 @@ function init(): void {
   updateModeHints();
   renderHistory();
   renderLibrary();
+  void migrateBrowserStories().then(refreshLibrary);
 }
 
 init();
