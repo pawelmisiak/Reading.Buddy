@@ -9,7 +9,11 @@ export interface Story {
   source: 'claude' | 'library';
 }
 
-const MODEL = 'claude-opus-5-5';
+/**
+ * Every Claude request in the app uses exactly this model. No refusal
+ * fallbacks are configured, so a request is never re-run on another model.
+ */
+export const MODEL = 'claude-sonnet-5-5';
 
 const STORY_SCHEMA = {
   type: 'object',
@@ -33,16 +37,18 @@ function makeClient(apiKey: string): Anthropic {
 
 async function askClaude(apiKey: string, prompt: string): Promise<{ title: string; story: string }> {
   const client = makeClient(apiKey);
-  const response = await client.beta.messages.create({
+  const response = await client.messages.create({
     model: MODEL,
     max_tokens: 16000,
-    betas: ['server-side-fallback-2026-07-01'],
-    fallbacks: 'default',
     output_config: { effort: 'low', format: { type: 'json_schema', schema: STORY_SCHEMA } },
     system: SYSTEM_PROMPT,
     messages: [{ role: 'user', content: prompt }],
   });
 
+  // The API reports which model actually answered; refuse anything else.
+  if (!response.model.startsWith(MODEL)) {
+    throw new Error(`Expected ${MODEL} but the reply came from ${response.model}.`);
+  }
   if (response.stop_reason === 'refusal') {
     throw new Error('Claude could not write this story. Try different words or a different topic.');
   }

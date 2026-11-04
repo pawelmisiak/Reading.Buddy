@@ -72,6 +72,9 @@ npm run build    # type-check and build to dist/
 
 ## Story generation (optional)
 
+Stories and simplified texts are written by **Claude Sonnet 5.5** (`claude-sonnet-5-5`, set in `src/story.ts`).
+No fallback models are used, and the app checks that each reply came from Sonnet 5.5.
+
 Open ⚙️ Settings and paste a Claude API key (from https://console.anthropic.com). The key is stored in this
 browser's local storage and is sent only to the Anthropic API. This is fine for a family using the app on
 their own device. **Before publishing the app for other people, move the Claude calls in `src/story.ts` to a

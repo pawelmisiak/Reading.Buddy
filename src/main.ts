@@ -282,7 +282,7 @@ function renderChips(): void {
 
 function updateModeHints(): void {
   $('storyModeHint').textContent = apiKey
-    ? 'Stories are written fresh by Claude.'
+    ? 'Stories are written fresh by Claude Sonnet 5.5.'
     : 'No Claude API key set, so a built-in story is used. Add a key in ⚙️ Settings for brand-new stories.';
   ($('simplifyPasted') as HTMLButtonElement).disabled = !apiKey;
 }
