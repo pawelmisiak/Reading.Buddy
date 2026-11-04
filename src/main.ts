@@ -10,7 +10,17 @@ import {
   type ReadState,
   type TokenizedText,
 } from './matcher';
-import { Listener, recognitionSupported, speak, stopSpeaking, ttsSupported } from './speech';
+import {
+  Listener,
+  probeMicrophone,
+  recognitionImpl,
+  recognitionSupported,
+  speak,
+  stopSpeaking,
+  testRecognition,
+  ttsSupported,
+} from './speech';
+import { clearLog, error as logError, formatLog, info, installGlobalHandlers, onLogChange } from './debugLog';
 import { generateStory, libraryStory, practiceWordsDrill, simplifyText, wordsInText, type Story } from './story';
 import { load, save, type SessionRecord } from './storage';
 import { findSaved, removeStory, toStory, type SavedStory } from './library';
@@ -50,7 +60,10 @@ const listener = new Listener(
       shown = committed;
       progressed();
     },
-    onError: (msg) => toast(msg),
+    onError: (msg) => {
+      logError('app', 'Shown to user', msg);
+      toast(msg);
+    },
     onStateChange: (on) => {
       const btn = $('micBtn');
       btn.classList.toggle('listening', on);
@@ -410,7 +423,8 @@ function toast(msg: string): void {
   t.textContent = msg;
   t.classList.remove('hidden');
   clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => t.classList.add('hidden'), 4500);
+  // Long messages (error explanations) stay up long enough to read.
+  toastTimer = window.setTimeout(() => t.classList.add('hidden'), Math.max(4500, msg.length * 70));
 }
 
 async function busy(btn: HTMLButtonElement, fn: () => Promise<void>): Promise<void> {
@@ -451,7 +465,92 @@ function readToMe(): void {
 }
 
 // ---------- wiring ----------
+/** Log what this browser can do, so a copied log explains itself. */
+async function logEnvironment(): Promise<void> {
+  let micPermission = 'unknown';
+  try {
+    micPermission = (await navigator.permissions.query({ name: 'microphone' as PermissionName })).state;
+  } catch {
+    /* Safari and others don't support querying the microphone permission */
+  }
+  let inputs: number | string = 'unknown';
+  try {
+    inputs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audioinput').length;
+  } catch {
+    /* not available on http:// */
+  }
+  info('env', 'Browser and page', {
+    userAgent: navigator.userAgent,
+    origin: location.origin,
+    secureContext: window.isSecureContext,
+    recognition: recognitionImpl(),
+    speechSynthesis: ttsSupported(),
+    voices: ttsSupported() ? speechSynthesis.getVoices().length : 0,
+    mediaDevices: !!navigator.mediaDevices,
+    micPermission,
+    audioInputs: inputs,
+    online: navigator.onLine,
+    listeningLanguage: lang,
+  });
+}
+
+async function runMicTest(btn: HTMLButtonElement): Promise<void> {
+  btn.disabled = true;
+  const label = btn.textContent;
+  try {
+    if (listener.listening) listener.stop();
+    await logEnvironment();
+    btn.textContent = '🎤 Checking microphone…';
+    const mic = await probeMicrophone();
+    (mic.ok ? info : logError)('mic-test', mic.detail);
+    if (!mic.ok) {
+      toast(`Microphone problem: ${mic.detail}`);
+      return;
+    }
+    btn.textContent = '🗣 Say something…';
+    const events = await testRecognition(lang, 6);
+    const heard = events.filter((e) => e.includes('result:'));
+    const err = events.find((e) => e.includes('ERROR'));
+    const summary = err
+      ? `Speech test failed: ${err.replace(/^\+[\d.]+s /, '')}`
+      : heard.length
+        ? 'Speech test worked! The browser heard you.'
+        : 'The microphone works, but the browser heard no words. Speak louder or closer, or check the input device in your system sound settings.';
+    (err ? logError : info)('mic-test', summary);
+    toast(summary);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+}
+
 function init(): void {
+  installGlobalHandlers();
+  void logEnvironment();
+  const logBox = $('debugLog');
+  const showLog = () => {
+    logBox.textContent = formatLog();
+    logBox.scrollTop = logBox.scrollHeight;
+  };
+  onLogChange(showLog);
+  showLog();
+  $('testMic').onclick = (e) => void runMicTest(e.currentTarget as HTMLButtonElement);
+  $('clearLog').onclick = () => clearLog();
+  $('copyLog').onclick = async () => {
+    const text = formatLog();
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('Log copied. Paste it into the chat.');
+    } catch {
+      // Clipboard needs https/permission; fall back to selecting the text.
+      const range = document.createRange();
+      range.selectNodeContents(logBox);
+      getSelection()?.removeAllRanges();
+      getSelection()?.addRange(range);
+      toast('Copy was blocked. The log is selected: press Ctrl/Cmd+C.');
+    }
+  };
+
   const levelSel = $<HTMLSelectElement>('level');
   for (const l of LEVELS) levelSel.add(new Option(`${l.label} · ${l.grade}`, l.id));
   levelSel.value = level.id;

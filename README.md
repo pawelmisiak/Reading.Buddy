@@ -112,6 +112,20 @@ so any device on the network sees the same list.
   time that browser opens the app.
 - The files in `dist/` alone (`npm run build`) have no story storage, because there's no app server.
 
+## Troubleshooting
+
+If listening doesn't work, open ⚙️ **Settings → 🔧 Troubleshooting** and press **🎤 Test microphone**,
+then say a few words. It checks the microphone, runs a short listening test and shows what happened.
+**📋 Copy log** copies the full log (browser, permissions, every speech event and error) so you can share it.
+The same lines appear in the browser's developer console, prefixed with `[ReadingBuddy]`.
+
+Common causes:
+- `network`: the browser has no online speech service. Brave, Arc, Opera, Vivaldi and plain Chromium often
+  lack it, so use Google Chrome, Microsoft Edge or Safari.
+- `not-allowed`: the microphone is blocked for the site, or for the browser in macOS System Settings →
+  Privacy & Security → Microphone, or the page isn't `https://` (use `npm run dev:lan`).
+- `service-not-allowed` in Safari: turn on Dictation (macOS: System Settings → Keyboard → Dictation).
+
 ## Privacy note
 
 In Chrome and Edge, speech recognition audio goes to the browser maker's servers for processing. Saved

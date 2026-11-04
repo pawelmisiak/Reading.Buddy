@@ -128,6 +128,19 @@
         <p class="hint small">
           Privacy: in most browsers (e.g. Chrome), speech recognition audio is processed by the browser maker's servers.
         </p>
+        <details id="troubleshooting">
+          <summary>🔧 Troubleshooting</summary>
+          <p class="hint small">
+            If listening doesn't work, press <b>Test microphone</b> and say a few words. Then press
+            <b>Copy log</b> and share it.
+          </p>
+          <div class="row">
+            <button type="button" id="testMic" class="secondary">🎤 Test microphone</button>
+            <button type="button" id="copyLog" class="ghost">📋 Copy log</button>
+            <button type="button" id="clearLog" class="ghost">Clear</button>
+          </div>
+          <pre id="debugLog" class="debug-log"></pre>
+        </details>
         <div class="row end"><button class="primary" value="close">Done</button></div>
       </form>
     </dialog>
