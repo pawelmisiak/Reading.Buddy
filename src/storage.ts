@@ -11,11 +11,14 @@ export function load<T>(key: string, fallback: T): T {
   }
 }
 
-export function save(key: string, value: unknown): void {
+/** Returns false when storage is unavailable or full. */
+export function save(key: string, value: unknown): boolean {
   try {
     localStorage.setItem(PREFIX + key, JSON.stringify(value));
+    return true;
   } catch {
     /* storage unavailable: the app still works, it just won't remember */
+    return false;
   }
 }
 

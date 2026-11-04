@@ -18,6 +18,9 @@ misread, so the child sees their progress live.
 - **Custom stories**: with a Claude API key, Reading Buddy writes a new story at the chosen level that uses
   every practice word, about whatever topic the child likes. Without a key it uses a built-in story library.
 - **Make it easier**: rewrites a pasted text (e.g. a news article) at the child's reading level.
+- **My stories**: press 💾 Save story while reading to keep a story (generated, simplified or pasted). Saved
+  stories appear in the 📚 My stories tab, where they can be read again or deleted. They're stored in the
+  browser on that device.
 - **Read to me**: reads the text aloud, highlighting each word. Tap any word to hear just that word.
 - **Results and reading log**: accuracy, words per minute, stars, and a "words to practise" list that can be
   added to the practice words with one tap. Finished readings are kept in a log.
@@ -98,7 +101,7 @@ small backend** so that no key lives in the browser.
 ## Privacy note
 
 In Chrome and Edge, speech recognition audio goes to the browser maker's servers for processing. Reading
-history and practice words stay in the browser's local storage.
+history, practice words and saved stories stay in the browser's local storage.
 
 ## Project layout
 
@@ -109,6 +112,7 @@ src/matcher.ts    word matching engine
 src/speech.ts     speech recognition and text-to-speech wrappers
 src/story.ts      Claude story generation and the built-in story library
 src/levels.ts     age levels and Dolch word lists
+src/library.ts    saved stories (My stories)
 src/storage.ts    localStorage helpers
 tests/            unit tests (Vitest)
 ```

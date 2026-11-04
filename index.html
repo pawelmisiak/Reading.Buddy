@@ -25,6 +25,7 @@
           <button role="tab" class="tab active" data-tab="paste">✏️ Paste text</button>
           <button role="tab" class="tab" data-tab="story">✨ Make a story</button>
           <button role="tab" class="tab" data-tab="words">⭐ Practice words</button>
+          <button role="tab" class="tab" data-tab="library">📚 My stories<span id="libraryCount"></span></button>
         </div>
 
         <div class="tabpanel" data-panel="paste">
@@ -63,6 +64,11 @@
             <button id="clearWords" class="ghost">Clear all</button>
           </div>
         </div>
+
+        <div class="tabpanel hidden" data-panel="library">
+          <p class="hint">Stories you saved. They're kept in this browser on this device.</p>
+          <div id="library" class="library"></div>
+        </div>
       </section>
 
       <section class="card reader hidden" id="reader">
@@ -81,6 +87,7 @@
           <button id="readToMe" class="secondary">🔊 Read to me</button>
           <button id="skipBtn" class="ghost" title="Mark this word and move on">Skip word ⏭</button>
           <button id="restartBtn" class="ghost">↺ Start over</button>
+          <button id="saveStory" class="secondary">💾 Save story</button>
           <button id="newText" class="ghost">New text</button>
         </div>
         <p class="hint small">Tip: tap any word to hear it.</p>

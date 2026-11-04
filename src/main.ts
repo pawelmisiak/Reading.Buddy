@@ -13,6 +13,7 @@ import {
 import { Listener, recognitionSupported, speak, stopSpeaking, ttsSupported } from './speech';
 import { generateStory, libraryStory, practiceWordsDrill, simplifyText, wordsInText, type Story } from './story';
 import { load, save, type SessionRecord } from './storage';
+import { addStory, findSaved, removeStory, toStory, type SavedStory } from './library';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -22,6 +23,7 @@ let practiceWords: string[] = load('practiceWords', []);
 let apiKey: string = load('apiKey', '');
 let lang: string = load('lang', 'en-US');
 let history: SessionRecord[] = load('history', []);
+let library: SavedStory[] = load('library', []);
 
 // ---------- reading session ----------
 let current: { story: Story; tokens: TokenizedText } | null = null;
@@ -106,6 +108,7 @@ function loadStory(story: Story): void {
   $('reader').classList.remove('hidden');
   $('results').classList.add('hidden');
   $('setup').classList.add('hidden');
+  updateSaveButton();
   render();
   $('reader').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -287,6 +290,75 @@ function updateModeHints(): void {
   ($('simplifyPasted') as HTMLButtonElement).disabled = !apiKey;
 }
 
+// ---------- my stories ----------
+function updateSaveButton(): void {
+  const btn = $<HTMLButtonElement>('saveStory');
+  const isSaved = !!current && !!findSaved(library, current.story.text);
+  btn.textContent = isSaved ? '✓ Saved' : '💾 Save story';
+  btn.disabled = isSaved;
+}
+
+function saveCurrentStory(): void {
+  if (!current) return;
+  const { list, added } = addStory(library, current.story, level.id);
+  if (!added) return updateSaveButton();
+  if (!save('library', list)) {
+    toast("Couldn't save: this browser's storage is full or turned off. Try deleting some saved stories.");
+    return;
+  }
+  library = list;
+  updateSaveButton();
+  renderLibrary();
+  toast('Saved to 📚 My stories.');
+}
+
+function renderLibrary(): void {
+  $('libraryCount').textContent = library.length ? ` (${library.length})` : '';
+  const box = $('library');
+  box.replaceChildren();
+  if (!library.length) {
+    box.innerHTML = '<p class="hint">No saved stories yet. Press 💾 Save story while reading to keep one here.</p>';
+    return;
+  }
+  for (const s of library) {
+    const item = document.createElement('div');
+    item.className = 'saved';
+    const info = document.createElement('div');
+    info.className = 'saved-info';
+    const title = document.createElement('b');
+    title.textContent = s.title;
+    const meta = document.createElement('span');
+    meta.className = 'hint small';
+    const words = s.practiceWords.length ? ` · words: ${s.practiceWords.slice(0, 6).join(', ')}` : '';
+    meta.textContent = `${getLevel(s.levelId).label} · saved ${new Date(s.savedAt).toLocaleDateString()}${words}`;
+    const preview = document.createElement('span');
+    preview.className = 'saved-preview';
+    preview.textContent = s.text.length > 110 ? `${s.text.slice(0, 110).trimEnd()}…` : s.text;
+    info.append(title, meta, preview);
+
+    const actions = document.createElement('div');
+    actions.className = 'saved-actions';
+    const read = document.createElement('button');
+    read.className = 'primary';
+    read.textContent = 'Read';
+    read.onclick = () => loadStory(toStory(s));
+    const del = document.createElement('button');
+    del.className = 'ghost';
+    del.textContent = '🗑';
+    del.title = `Delete “${s.title}”`;
+    del.onclick = () => {
+      if (!confirm(`Delete “${s.title}” from My stories?`)) return;
+      library = removeStory(library, s.id);
+      save('library', library);
+      renderLibrary();
+      if (current) updateSaveButton();
+    };
+    actions.append(read, del);
+    item.append(info, actions);
+    box.append(item);
+  }
+}
+
 // ---------- misc UI ----------
 let toastTimer = 0;
 function toast(msg: string): void {
@@ -428,6 +500,7 @@ function init(): void {
     resetReading();
     render();
   };
+  $('saveStory').onclick = saveCurrentStory;
   $('newText').onclick = () => {
     if (listener.listening) listener.stop();
     stopSpeaking();
@@ -472,6 +545,7 @@ function init(): void {
   renderChips();
   updateModeHints();
   renderHistory();
+  renderLibrary();
 }
 
 init();
