@@ -25,7 +25,9 @@ misread, so the child sees their progress live.
 
 ## Running it
 
-Requires Node 20+.
+Requires **Node.js 22.12 or newer** (check with `node -v`). If yours is older, install the current LTS
+from https://nodejs.org, or with `nvm install` (the repo's `.nvmrc` picks the right version). After
+upgrading Node, delete `node_modules` and run `npm install` again.
 
 ```bash
 npm install
